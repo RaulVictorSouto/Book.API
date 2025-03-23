@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Book.Shared.Models.Modelos
@@ -18,6 +19,21 @@ namespace Book.Shared.Models.Modelos
         public string BookISBN { get; set; }
         public string BookRating { get; set; }
         public byte[] BookCoverPage { get; set; }
+        [JsonIgnore]
+        public string BookTags { get; set; }
+
+        //armazenamento e tratamento de tags
+        [NotMapped]
+        public List<string> BookTagsList
+        {
+            get => string.IsNullOrWhiteSpace(BookTags)
+                ? new List<string>() 
+                : BookTags.Split(',').Select(tag => tag.Trim().Trim('\'')).ToList();
+
+            set => BookTags = value != null
+                 ? string.Join(", ", value.Select(tag => $"'{tag}'")) 
+                : "";
+        }
 
         //FK para autor
         public int AuthorID { get; set; } 
@@ -38,12 +54,15 @@ namespace Book.Shared.Models.Modelos
             AuthorID = authorId;
             BookCoverPage = coverPage ?? Array.Empty<byte>();
             Genres = new List<GenreClass>();
+            BookTagsList = new List<string>();
         }
 
         // Construtor sem parâmetros (obrigatório para o EF Core)
         public BookClass()
         {
             Genres = new List<GenreClass>();
+            BookTagsList = new List<string>();
         }
+
     }
 }

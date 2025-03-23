@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Book.Shared.Models.Modelos
@@ -15,6 +16,7 @@ namespace Book.Shared.Models.Modelos
 
 
         //Relaccionamento com livro
+        [JsonIgnore] // Ignora essa propriedade na serialização JSON
         public ICollection<BookClass> Books { get; set; }
 
 

@@ -1,7 +1,10 @@
+using System.Text.Json.Serialization;
 using Book.API.Routes;
 using Book.Shared.Data.Banco;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+
 
 var builder = WebApplication.CreateBuilder(args);
 

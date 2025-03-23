@@ -4,6 +4,7 @@ using Book.Shared.Data.Banco;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Book.Shared.Data.Migrations
 {
     [DbContext(typeof(BookApiContext))]
-    partial class BookApiContextModelSnapshot : ModelSnapshot
+    [Migration("20250323122748_AdiciocaoDoAtributoTag")]
+    partial class AdiciocaoDoAtributoTag
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,6 +72,10 @@ namespace Book.Shared.Data.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("BookTags")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("BookTagsList")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 

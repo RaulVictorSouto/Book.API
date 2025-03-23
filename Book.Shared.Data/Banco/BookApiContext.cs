@@ -32,6 +32,16 @@ namespace Book.Shared.Data.Banco
                 .HasMany(g => g.Books)
                 .WithMany(b => b.Genres)
                 .UsingEntity(j => j.ToTable("TblBookGenres"));
+
+            modelBuilder.Entity<BookClass>()
+                .HasOne(b => b.Author) 
+                .WithMany(a => a.Books) 
+                .HasForeignKey(b => b.AuthorID);
+
+            modelBuilder.Entity<BookClass>()
+                .HasMany(b => b.Genres)
+                .WithMany(g => g.Books)
+                .UsingEntity(j => j.ToTable("TblBookGenres"));
         }
     }
 }
