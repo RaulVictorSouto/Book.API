@@ -22,22 +22,14 @@ namespace Book.Shared.Data.Banco
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.Entity<AuthorClass>()
-                .HasMany(a => a.Books)
-                .WithOne(b => b.Author)
-                .HasForeignKey(b => b.AuthorID);
-
-            modelBuilder.Entity<GenreClass>()
-                .HasMany(g => g.Books)
-                .WithMany(b => b.Genres)
-                .UsingEntity(j => j.ToTable("TblBookGenres"));
-
+        { 
+            // Relacionamento muitos-para-muitos entre BookClass e AuthorClass
             modelBuilder.Entity<BookClass>()
-                .HasOne(b => b.Author) 
-                .WithMany(a => a.Books) 
-                .HasForeignKey(b => b.AuthorID);
+                .HasMany(b => b.Authors)
+                .WithMany(a => a.Books)
+                .UsingEntity(j => j.ToTable("TblBookAuthors"));
 
+            // Relacionamento muitos-para-muitos entre BookClass e GenreClass
             modelBuilder.Entity<BookClass>()
                 .HasMany(b => b.Genres)
                 .WithMany(g => g.Books)

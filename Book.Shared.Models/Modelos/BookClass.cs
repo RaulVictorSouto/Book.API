@@ -35,15 +35,18 @@ namespace Book.Shared.Models.Modelos
                 : "";
         }
 
-        //FK para autor
-        public int AuthorID { get; set; } 
-        public AuthorClass Author { get; set; }
+        ////FK para autor
+        //public int AuthorID { get; set; } 
+        //public AuthorClass Author { get; set; }
+
+        //Relacionamento para autores
+        public ICollection<AuthorClass> Authors { get; set; }
 
         //Relacionamento para genero
         public ICollection<GenreClass> Genres { get; set; }
 
         //Construtor
-        public BookClass(string title, string language, string publisher, string isbn, string rating, int authorId, byte[] coverPage)
+        public BookClass(string title, string language, string publisher, string isbn, string rating, byte[] coverPage)
         {
             BookID = Guid.NewGuid();
             BookTitle = title;
@@ -51,8 +54,8 @@ namespace Book.Shared.Models.Modelos
             BookPublisher = publisher;
             BookISBN = isbn;
             BookRating = rating;
-            AuthorID = authorId;
             BookCoverPage = coverPage ?? Array.Empty<byte>();
+            Authors = new List<AuthorClass>();
             Genres = new List<GenreClass>();
             BookTagsList = new List<string>();
         }
@@ -60,6 +63,7 @@ namespace Book.Shared.Models.Modelos
         // Construtor sem parâmetros (obrigatório para o EF Core)
         public BookClass()
         {
+            Authors = new List<AuthorClass>();
             Genres = new List<GenreClass>();
             BookTagsList = new List<string>();
         }

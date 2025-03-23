@@ -25,9 +25,12 @@ namespace Book.API.Routes
                         return Results.BadRequest("O título do livro é obrigatório.");
 
                     // Verifica se o autor existe
-                    var author = await context.TblAuthor.FindAsync(req.AuthorID);
-                    if (author == null)
-                        return Results.BadRequest("Autor não encontrado.");
+                    var authors = await context.TblAuthor
+                        .Where(a => req.AuthorIDs.Contains(a.AuthorID))
+                        .ToListAsync();
+
+                    if(authors.Count != req.AuthorIDs.Count)
+                        return Results.BadRequest("Um ou mais autores não foram encontrados.");
 
                     // Busca os gêneros no banco de dados
                     var genres = await context.TblGenre
@@ -44,8 +47,10 @@ namespace Book.API.Routes
                         req.BookPublisher,
                         req.BookISBN,
                         req.BookRating,
-                        req.AuthorID,
                         req.BookCoverPage);
+
+                    //Associa os autores ao livro
+                    book.Authors = authors;
 
                     // Associa os gêneros ao livro
                     book.Genres = genres;
@@ -68,7 +73,7 @@ namespace Book.API.Routes
                async (BookApiContext context) =>
                {
                    var books = await context.TblBook
-                   .Include(b => b.Author)
+                   .Include(b => b.Authors)
                    .Include(b => b.Genres)
                    .ToListAsync();
 
@@ -99,11 +104,14 @@ namespace Book.API.Routes
                     if (book == null)
                         return Results.NotFound("Livro não encontrado.");
 
-                    // Verifica se o autor existe
-                    var author = await context.TblAuthor.FindAsync(req.AuthorID);
-                    if (author == null)
-                        return Results.BadRequest("Autor não encontrado.");
+                    // Busca os novos gêneros no banco de dados
+                    var newAuthors = await context.TblAuthor
+                        .Where(a => req.AuthorIDs.Contains(a.AuthorID))
+                        .ToListAsync();
 
+                    if (newAuthors == null || newAuthors.Count != req.AuthorIDs.Count)
+                        return Results.BadRequest("Um ou mais autores não foram encontrados.");
+                    
                     // Busca os novos gêneros no banco de dados
                     var newGenres = await context.TblGenre
                         .Where(g => req.GenreIDs.Contains(g.GenreID))
@@ -117,8 +125,10 @@ namespace Book.API.Routes
                     book.BookLanguage = req.BookLanguage;
                     book.BookPublisher = req.BookPublisher;
                     book.BookRating = req.BookRating;
-                    book.AuthorID = req.AuthorID;
                     book.BookCoverPage = req.BookCoverPage;
+
+                    // Atualiza os autores associados ao livro
+                    book.Authors = newAuthors;
 
                     // Atualiza os gêneros associados ao livro
                     book.Genres = newGenres;
