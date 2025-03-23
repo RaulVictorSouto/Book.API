@@ -1,7 +1,9 @@
-﻿using System.Net;
+﻿using System.Data;
+using System.Net;
 using Book.Shared.Data.Banco;
 using Book.Shared.Models.Modelos;
 using Book.Shared.Models.Requisicoes;
+using Dapper;
 using Microsoft.EntityFrameworkCore;
 
 namespace Book.API.Routes
@@ -35,12 +37,17 @@ namespace Book.API.Routes
 
             //GET
             route.MapGet("",
-                async (BookApiContext context) =>
-                {
-                    var genres = await context.TblGenre.ToListAsync();
-                    return Results.Ok(genres);
-                })
-                .Produces<List<BookClass>>(StatusCodes.Status200OK);
+            async (IDbConnection dbConnection) =>
+            {
+                var query = @"Select * from TblGenre";
+                var authors = await dbConnection.QueryAsync<GenreClass>(query);
+                if (authors == null || !authors.Any())
+                    return Results.NotFound("Nenhum autor encontrado.");
+                return Results.Ok(authors);
+
+            })
+            .Produces<List<AuthorClass>>(StatusCodes.Status200OK);
+
 
 
             //PUT

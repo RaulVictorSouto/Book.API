@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Book.Shared.Models.Modelos;
+using Microsoft.Extensions.Configuration;
 
 namespace Book.Shared.Data.Banco
 {
@@ -14,11 +15,28 @@ namespace Book.Shared.Data.Banco
         public DbSet<AuthorClass> TblAuthor { get; set; }
         public DbSet<GenreClass> TblGenre { get; set; }
 
+        private readonly IConfiguration _configuration;
+
+
+        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        //{
+        //    optionsBuilder.UseSqlServer(connectionString: "Server=localhost;Database=SistBook;User Id=sa;Password=1234;TrustServerCertificate=True;");
+        //    base.OnConfiguring(optionsBuilder);
+        //}
+
+        public BookApiContext(DbContextOptions<BookApiContext> options, IConfiguration configuration)
+           : base(options)
+        {
+            _configuration = configuration;
+        }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlServer(connectionString: "Server=localhost;Database=SistBook;User Id=sa;Password=1234;TrustServerCertificate=True;");
-            base.OnConfiguring(optionsBuilder);
+            if (!optionsBuilder.IsConfigured)
+            {
+                var connectionString = _configuration.GetConnectionString("DefaultConnection");
+                optionsBuilder.UseSqlServer(connectionString);
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

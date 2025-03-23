@@ -15,8 +15,8 @@ namespace Book.Shared.Models.Requisicoes
        string BookISBN,
        string BookRating,
        byte[] BookCoverPage,
-       List<int> AuthorIDs = null,
-       List<int>? GenreIDs = null, // Usar null como valor padrão
+       List<int>? AuthorIDs = null,
+       List<int>? GenreIDs = null, 
        List<string>? BookTags = null
    )
     { 
@@ -25,5 +25,7 @@ namespace Book.Shared.Models.Requisicoes
         public List<int> AuthorIDs { get; init; } = AuthorIDs ?? new List<int>();
         public List<int> GenreIDs { get; init; } = GenreIDs ?? new List<int>();
         public List<string> BookTags { get; init; } = BookTags ?? new List<string>();
+        public List<string> AuthorNames { get; set; } = new List<string>();
+        public List<string> GenreNames { get; set; } = new List<string>();
     }
 }

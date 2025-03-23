@@ -1,7 +1,9 @@
+using System.Data;
 using System.Text.Json.Serialization;
 using Book.API.Routes;
 using Book.Shared.Data.Banco;
 using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 
@@ -9,7 +11,15 @@ using Microsoft.OpenApi.Models;
 var builder = WebApplication.CreateBuilder(args);
 
 //adicionando o BookApiContext
-builder.Services.AddDbContext<BookApiContext>();
+builder.Services.AddDbContext<BookApiContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Registrar DatabaseConnection como um serviço
+builder.Services.AddSingleton<DapperConnection>();
+
+// Registrar IDbConnection usando a classe DatabaseConnection
+builder.Services.AddScoped<IDbConnection>(sp =>
+    sp.GetRequiredService<DapperConnection>().CreateConnection());
 
 //adicionando o Swagger
 builder.Services.AddEndpointsApiExplorer();

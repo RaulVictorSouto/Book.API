@@ -1,9 +1,12 @@
-﻿using System.Linq;
+﻿using System.Data.Common;
+using System.Data;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using Book.Shared.Data.Banco;
 using Book.Shared.Models.Modelos;
 using Book.Shared.Models.Requisicoes;
 using Microsoft.EntityFrameworkCore;
+using Dapper;
 
 namespace Book.API.Routes
 {
@@ -70,19 +73,70 @@ namespace Book.API.Routes
 
             //GET
             route.MapGet("",
-               async (BookApiContext context) =>
-               {
-                   var books = await context.TblBook
-                   .Include(b => b.Authors)
-                   .Include(b => b.Genres)
-                   .ToListAsync();
+                async (IDbConnection dbConnection) =>
+                {
+                    var query = @"
+                                    SELECT 
+                                    b.BookID, 
+                                    b.BookTitle, 
+                                    b.BookLanguage, 
+                                    b.BookPublisher, 
+                                    b.BookISBN, 
+                                    b.BookRating, 
+                                    b.BookCoverPage,
+                                    b.BookTags,
+                                    a.AuthorID, 
+                                    a.AuthorName, 
+                                    g.GenreID, 
+                                    g.GenreName 
+                                    FROM TblBook b
+                                    LEFT JOIN TblBookAuthors ba ON b.BookID = ba.BooksBookID
+                                    LEFT JOIN TblAuthor a ON ba.AuthorsAuthorID = a.AuthorID
+                                    LEFT JOIN TblBookGenres bg ON b.BookID = bg.BooksBookID
+                                    LEFT JOIN TblGenre g ON bg.GenresGenreID = g.GenreID";
 
-                   if (books == null || !books.Any())
-                       return Results.NotFound("Nenhum livro encontrado.");
+                    var bookDictionary = new Dictionary<Guid, BookClass>();
 
-                   return Results.Ok(books);
-               })
-               .Produces<List<BookClass>>(StatusCodes.Status200OK);
+                    var result = await dbConnection.QueryAsync<BookClass, AuthorClass, GenreClass, BookClass>(
+                        query,
+                        (book, author, genre) =>
+                        {
+                            // Verifica se o livro já foi adicionado ao dicionário
+                            if (!bookDictionary.TryGetValue(book.BookID, out var bookEntry))
+                            {
+                                bookEntry = book;
+                                bookEntry.Authors = new List<AuthorClass>();
+                                bookEntry.Genres = new List<GenreClass>();
+                                bookDictionary.Add(book.BookID, bookEntry);
+                            }
+
+                            // Adiciona o autor ao livro, se existir e não estiver duplicado
+                            if (author != null && !bookEntry.Authors.Any(a => a.AuthorID == author.AuthorID))
+                            {
+                                bookEntry.Authors.Add(author);
+                            }
+
+                            // Adiciona o gênero ao livro, se existir e não estiver duplicado
+                            if (genre != null && !bookEntry.Genres.Any(g => g.GenreID == genre.GenreID))
+                            {
+                                bookEntry.Genres.Add(genre);
+                            }
+
+                            return bookEntry;
+                        },
+                        splitOn: "AuthorID,GenreID"
+                    );
+
+                    // Converte o dicionário para uma lista de livros
+                    var books = bookDictionary.Values.ToList();
+
+                    if (books == null || !books.Any())
+                        return Results.NotFound("Nenhum livro encontrado.");
+
+                    return Results.Ok(books);
+                })
+            .Produces<List<BookClass>>(StatusCodes.Status200OK);
+
 
 
             //PUT
