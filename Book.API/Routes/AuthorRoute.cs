@@ -49,6 +49,22 @@ namespace Book.API.Routes
                 .Produces<List<AuthorClass>>(StatusCodes.Status200OK);
 
 
+            //GET BY ID
+            route.MapGet("{AuthorID:int}",
+               async (int AuthorID, IDbConnection dbConnection) =>
+               {
+                   var query = @"Select * from TblAuthor WHERE AuthorID = @AuthorID";
+                   var author = await dbConnection.QueryFirstOrDefaultAsync<AuthorClass>(query, new { AuthorID });
+                   if (author == null)
+                       return Results.NotFound($"Autor com ID {AuthorID} não encontrado.");
+
+                   return Results.Ok(author);
+
+               })
+               .Produces<List<AuthorClass>>(StatusCodes.Status200OK)
+                 .Produces(StatusCodes.Status404NotFound);
+
+
             //PUT
             route.MapPut("{AuthorID:int}",
                 async(int AuthorID, AuthorRequest req, BookApiContext context) =>

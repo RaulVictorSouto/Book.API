@@ -49,6 +49,22 @@ namespace Book.API.Routes
             .Produces<List<AuthorClass>>(StatusCodes.Status200OK);
 
 
+            //GET BY ID
+            route.MapGet("{GenreID:int}",
+               async (int GenreID, IDbConnection dbConnection) =>
+               {
+                   var query = @"Select * from TblGenre WHERE GenreID = @GenreID";
+                   var genre = await dbConnection.QueryFirstOrDefaultAsync<GenreClass>(query, new { GenreID });
+                   if (genre == null)
+                       return Results.NotFound($"O Gênero com ID {GenreID} não encontrado.");
+
+                   return Results.Ok(genre);
+
+               })
+               .Produces<List<GenreClass>>(StatusCodes.Status200OK)
+                 .Produces(StatusCodes.Status404NotFound);
+
+
 
             //PUT
             route.MapPut("{GenreID:int}",

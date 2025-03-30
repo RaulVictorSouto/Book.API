@@ -38,6 +38,14 @@ builder.Services.AddSwaggerGen(doc =>
     });
 });
 
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowAll", builder => {
+        builder.AllowAnyOrigin()
+               .AllowAnyMethod()
+               .AllowAnyHeader();
+    });
+});
+
 var app = builder.Build();
 
 //mapeando as routes
@@ -50,6 +58,9 @@ app.UseSwaggerUI(c =>
 {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Book API v1");
 });
+
+app.UseCors("AllowAll");
+
 
 
 app.Run();

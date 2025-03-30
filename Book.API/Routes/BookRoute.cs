@@ -137,6 +137,70 @@ namespace Book.API.Routes
                 })
             .Produces<List<BookClass>>(StatusCodes.Status200OK);
 
+            //GET BY ID
+            route.MapGet("{BookID:guid}",
+                async (Guid BookID, IDbConnection dbConnection) =>
+                {
+                    var query = @"
+                    SELECT 
+                        b.BookID, 
+                        b.BookTitle, 
+                        b.BookLanguage, 
+                        b.BookPublisher, 
+                        b.BookISBN, 
+                        b.BookRating, 
+                        b.BookCoverPage,
+                        b.BookTags,
+                        a.AuthorID, 
+                        a.AuthorName, 
+                        g.GenreID, 
+                        g.GenreName 
+                    FROM TblBook b
+                    LEFT JOIN TblBookAuthors ba ON b.BookID = ba.BooksBookID
+                    LEFT JOIN TblAuthor a ON ba.AuthorsAuthorID = a.AuthorID
+                    LEFT JOIN TblBookGenres bg ON b.BookID = bg.BooksBookID
+                    LEFT JOIN TblGenre g ON bg.GenresGenreID = g.GenreID
+                    WHERE b.BookID = @BookID";
+
+                    var bookDictionary = new Dictionary<Guid, BookClass>();
+
+                    var result = await dbConnection.QueryAsync<BookClass, AuthorClass, GenreClass, BookClass>(
+                        query,
+                        (book, author, genre) =>
+                        {
+                            if (!bookDictionary.TryGetValue(book.BookID, out var bookEntry))
+                            {
+                                bookEntry = book;
+                                bookEntry.Authors = new List<AuthorClass>();
+                                bookEntry.Genres = new List<GenreClass>();
+                                bookDictionary.Add(book.BookID, bookEntry);
+                            }
+
+                            if (author != null && !bookEntry.Authors.Any(a => a.AuthorID == author.AuthorID))
+                            {
+                                bookEntry.Authors.Add(author);
+                            }
+
+                            if (genre != null && !bookEntry.Genres.Any(g => g.GenreID == genre.GenreID))
+                            {
+                                bookEntry.Genres.Add(genre);
+                            }
+
+                            return bookEntry;
+                        },
+                        new { BookID }, // Add this parameter
+                        splitOn: "AuthorID,GenreID"
+                    );
+
+                    // Get the single book from dictionary
+                    if (!bookDictionary.TryGetValue(BookID, out var book))
+                        return Results.NotFound($"Livro com ID {BookID} não encontrado.");
+
+                    return Results.Ok(book);
+                })
+            .Produces<BookClass>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
 
 
             //PUT
