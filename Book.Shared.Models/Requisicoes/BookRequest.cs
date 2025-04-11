@@ -15,6 +15,7 @@ namespace Book.Shared.Models.Requisicoes
        string BookISBN,
        string BookRating,
        byte[] BookCoverPage,
+       string BookCoverFileName,
        List<int>? AuthorIDs = null,
        List<int>? GenreIDs = null, 
        List<string>? BookTags = null

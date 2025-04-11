@@ -17,13 +17,6 @@ namespace Book.Shared.Data.Banco
 
         private readonly IConfiguration _configuration;
 
-
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //{
-        //    optionsBuilder.UseSqlServer(connectionString: "Server=localhost;Database=SistBook;User Id=sa;Password=1234;TrustServerCertificate=True;");
-        //    base.OnConfiguring(optionsBuilder);
-        //}
-
         public BookApiContext(DbContextOptions<BookApiContext> options, IConfiguration configuration)
            : base(options)
         {

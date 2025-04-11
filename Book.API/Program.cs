@@ -2,6 +2,7 @@ using System.Data;
 using System.Text.Json.Serialization;
 using Book.API.Routes;
 using Book.Shared.Data.Banco;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
@@ -20,6 +21,12 @@ builder.Services.AddSingleton<DapperConnection>();
 // Registrar IDbConnection usando a classe DatabaseConnection
 builder.Services.AddScoped<IDbConnection>(sp =>
     sp.GetRequiredService<DapperConnection>().CreateConnection());
+
+// serviços de autorização
+builder.Services.AddAuthorization();
+
+// Outras configurações de serviço
+builder.Services.AddControllers();
 
 //adicionando o Swagger
 builder.Services.AddEndpointsApiExplorer();
@@ -46,6 +53,23 @@ builder.Services.AddCors(options => {
     });
 });
 
+// Configuração para uploads grandes
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 52428800; // 50MB
+});
+
+// Configuração do Kestrel
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 52428800; // 50MB
+});
+
+// Logging detalhado
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 var app = builder.Build();
 
 //mapeando as routes
@@ -61,6 +85,11 @@ app.UseSwaggerUI(c =>
 
 app.UseCors("AllowAll");
 
+// Tratamento de erros
+app.UseExceptionHandler("/error");
+app.UseHttpsRedirection();
+app.UseAuthorization();
+app.MapControllers();
 
 
 app.Run();

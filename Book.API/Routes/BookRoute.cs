@@ -7,6 +7,9 @@ using Book.Shared.Models.Modelos;
 using Book.Shared.Models.Requisicoes;
 using Microsoft.EntityFrameworkCore;
 using Dapper;
+using System.IO;
+using System.Linq;
+using Microsoft.AspNetCore.Http;
 
 namespace Book.API.Routes
 {
@@ -32,7 +35,7 @@ namespace Book.API.Routes
                         .Where(a => req.AuthorIDs.Contains(a.AuthorID))
                         .ToListAsync();
 
-                    if(authors.Count != req.AuthorIDs.Count)
+                    if (authors.Count != req.AuthorIDs.Count)
                         return Results.BadRequest("Um ou mais autores não foram encontrados.");
 
                     // Busca os gêneros no banco de dados
@@ -43,6 +46,31 @@ namespace Book.API.Routes
                     if (genres.Count != req.GenreIDs.Count)
                         return Results.BadRequest("Um ou mais gêneros não foram encontrados.");
 
+
+
+                    // Processando a imagem da capa
+                    byte[]? coverPageBytes = null;
+                    if (req.BookCoverPage != null && req.BookCoverPage.Length > 0)
+                    {
+                        //verifica a extensão do arquivo
+                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                        var fileExtension = Path.GetExtension(req.BookCoverFileName).ToLower();
+
+                        if (!allowedExtensions.Any(ext => string.Equals(ext, fileExtension, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            return Results.BadRequest("Formato de imagem inválido. Use JPG, JPEG ou PNG");
+                        }
+
+                        //processa o arquivo
+                        coverPageBytes = req.BookCoverPage;
+
+                        //verifica o tamanho
+                        if (coverPageBytes.Length > 5 * 1024 * 1024)
+                        {
+                            return Results.BadRequest("A imagem da capa não pode exceder 5MB");
+                        }
+                    }
+
                     // Cria o livro
                     var book = new BookClass(
                         req.BookTitle,
@@ -50,7 +78,7 @@ namespace Book.API.Routes
                         req.BookPublisher,
                         req.BookISBN,
                         req.BookRating,
-                        req.BookCoverPage);
+                        coverPageBytes);
 
                     //Associa os autores ao livro
                     book.Authors = authors;
