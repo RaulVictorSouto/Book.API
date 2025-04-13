@@ -19,6 +19,8 @@ namespace Book.Shared.Models.Modelos
         public string BookISBN { get; set; }
         public string BookRating { get; set; }
         public byte[]? BookCoverPage { get; set; }
+
+
         [JsonIgnore]
         public string BookTags { get; set; }
 

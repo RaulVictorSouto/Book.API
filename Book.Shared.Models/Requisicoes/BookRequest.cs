@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Book.Shared.Models.Modelos;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
 namespace Book.Shared.Models.Requisicoes
@@ -15,7 +17,7 @@ namespace Book.Shared.Models.Requisicoes
        string BookISBN,
        string BookRating,
        byte[] BookCoverPage,
-       string BookCoverFileName,
+       //string? BookCoverPage,
        List<int>? AuthorIDs = null,
        List<int>? GenreIDs = null, 
        List<string>? BookTags = null

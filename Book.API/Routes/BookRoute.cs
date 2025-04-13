@@ -10,6 +10,9 @@ using Dapper;
 using System.IO;
 using System.Linq;
 using Microsoft.AspNetCore.Http;
+using System.Text.Json;
+using Microsoft.IdentityModel.Tokens;
+using System.Text.RegularExpressions;
 
 namespace Book.API.Routes
 {
@@ -22,81 +25,53 @@ namespace Book.API.Routes
 
             //POST
             route.MapPost("",
-                async (BookRequest req, BookApiContext context) =>
-                {
-                    if (req == null)
-                        return Results.BadRequest("Request inválida.");
+            async (BookRequest req, BookApiContext context) =>
+            {
+                if (req == null)
+                    return Results.BadRequest("Request inválida.");
 
-                    if (string.IsNullOrEmpty(req.BookTitle))
-                        return Results.BadRequest("O título do livro é obrigatório.");
+                if (string.IsNullOrEmpty(req.BookTitle))
+                    return Results.BadRequest("O título do livro é obrigatório.");
 
-                    // Verifica se o autor existe
-                    var authors = await context.TblAuthor
-                        .Where(a => req.AuthorIDs.Contains(a.AuthorID))
-                        .ToListAsync();
+                var authors = await context.TblAuthor
+                    .Where(a => req.AuthorIDs.Contains(a.AuthorID))
+                    .ToListAsync();
 
-                    if (authors.Count != req.AuthorIDs.Count)
-                        return Results.BadRequest("Um ou mais autores não foram encontrados.");
+                if (authors.Count != req.AuthorIDs.Count)
+                    return Results.BadRequest("Um ou mais autores não foram encontrados.");
 
-                    // Busca os gêneros no banco de dados
-                    var genres = await context.TblGenre
-                        .Where(g => req.GenreIDs.Contains(g.GenreID))
-                        .ToListAsync();
+                var genres = await context.TblGenre
+                    .Where(g => req.GenreIDs.Contains(g.GenreID))
+                    .ToListAsync();
 
-                    if (genres.Count != req.GenreIDs.Count)
-                        return Results.BadRequest("Um ou mais gêneros não foram encontrados.");
+                if (genres.Count != req.GenreIDs.Count)
+                    return Results.BadRequest("Um ou mais gêneros não foram encontrados.");
 
+                //var bookCoverBytes = string.IsNullOrEmpty(req.BookCoverPage)
+                //    ? null
+                //    : Convert.FromBase64String(req.BookCoverPage);
 
+                var book = new BookClass(
+                    req.BookTitle,
+                    req.BookLanguage,
+                    req.BookPublisher,
+                    req.BookISBN,
+                    req.BookRating,
+                    req.BookCoverPage
+                );
 
-                    // Processando a imagem da capa
-                    byte[]? coverPageBytes = null;
-                    if (req.BookCoverPage != null && req.BookCoverPage.Length > 0)
-                    {
-                        //verifica a extensão do arquivo
-                        var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
-                        var fileExtension = Path.GetExtension(req.BookCoverFileName).ToLower();
+                book.Authors = authors;
+                book.Genres = genres;
+                book.BookTagsList = req.BookTags;
 
-                        if (!allowedExtensions.Any(ext => string.Equals(ext, fileExtension, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            return Results.BadRequest("Formato de imagem inválido. Use JPG, JPEG ou PNG");
-                        }
+                await context.AddAsync(book);
+                await context.SaveChangesAsync();
 
-                        //processa o arquivo
-                        coverPageBytes = req.BookCoverPage;
-
-                        //verifica o tamanho
-                        if (coverPageBytes.Length > 5 * 1024 * 1024)
-                        {
-                            return Results.BadRequest("A imagem da capa não pode exceder 5MB");
-                        }
-                    }
-
-                    // Cria o livro
-                    var book = new BookClass(
-                        req.BookTitle,
-                        req.BookLanguage,
-                        req.BookPublisher,
-                        req.BookISBN,
-                        req.BookRating,
-                        coverPageBytes);
-
-                    //Associa os autores ao livro
-                    book.Authors = authors;
-
-                    // Associa os gêneros ao livro
-                    book.Genres = genres;
-
-                    //Associa as tags
-                    book.BookTagsList = req.BookTags;
-
-                    // Salva o livro no banco de dados
-                    await context.AddAsync(book);
-                    await context.SaveChangesAsync();
-
-                    return Results.Created($"/book/{book.BookID}", book);
-                })
-                .Produces<BookClass>(StatusCodes.Status201Created)
-                .Produces(StatusCodes.Status400BadRequest);
+                return Results.Created($"/book/{book.BookID}", book); 
+            })
+            .Accepts<BookRequest>("application/json")
+            .Produces<BookClass>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status400BadRequest);
 
 
             //GET
@@ -135,6 +110,7 @@ namespace Book.API.Routes
                                 bookEntry = book;
                                 bookEntry.Authors = new List<AuthorClass>();
                                 bookEntry.Genres = new List<GenreClass>();
+
                                 bookDictionary.Add(book.BookID, bookEntry);
                             }
 
@@ -233,64 +209,64 @@ namespace Book.API.Routes
 
             //PUT
             route.MapPut("{BookID:guid}",
-                async (Guid BookID, BookRequest req, BookApiContext context) =>
-                {
-                    // Validação da requisição
-                    if (req == null)
-                        return Results.BadRequest("Request inválida.");
+                 async (Guid BookID, BookRequest req, BookApiContext context) =>
+                 {
+                     // Validação da requisição
+                     if (req == null)
+                         return Results.BadRequest("Request inválida.");
 
-                    if (string.IsNullOrEmpty(req.BookTitle))
-                        return Results.BadRequest("O título do livro é obrigatório.");
+                     if (string.IsNullOrEmpty(req.BookTitle))
+                         return Results.BadRequest("O título do livro é obrigatório.");
 
-                    // Busca o livro no banco de dados, incluindo os gêneros associados
-                    var book = await context.TblBook
-                        .Include(b => b.Genres) // Carrega os gêneros associados ao livro
-                        .FirstOrDefaultAsync(x => x.BookID == BookID);
+                     // Busca o livro no banco de dados, incluindo os gêneros associados
+                     var book = await context.TblBook
+                         .Include(b => b.Genres) // Carrega os gêneros associados ao livro
+                         .FirstOrDefaultAsync(x => x.BookID == BookID);
 
-                    if (book == null)
-                        return Results.NotFound("Livro não encontrado.");
+                     if (book == null)
+                         return Results.NotFound("Livro não encontrado.");
 
-                    // Busca os novos gêneros no banco de dados
-                    var newAuthors = await context.TblAuthor
-                        .Where(a => req.AuthorIDs.Contains(a.AuthorID))
-                        .ToListAsync();
+                     // Busca os novos gêneros no banco de dados
+                     var newAuthors = await context.TblAuthor
+                         .Where(a => req.AuthorIDs.Contains(a.AuthorID))
+                         .ToListAsync();
 
-                    if (newAuthors == null || newAuthors.Count != req.AuthorIDs.Count)
-                        return Results.BadRequest("Um ou mais autores não foram encontrados.");
-                    
-                    // Busca os novos gêneros no banco de dados
-                    var newGenres = await context.TblGenre
-                        .Where(g => req.GenreIDs.Contains(g.GenreID))
-                        .ToListAsync();
+                     if (newAuthors == null || newAuthors.Count != req.AuthorIDs.Count)
+                         return Results.BadRequest("Um ou mais autores não foram encontrados.");
 
-                    if (newGenres == null || newGenres.Count != req.GenreIDs.Count)
-                        return Results.BadRequest("Um ou mais gêneros não foram encontrados.");
+                     // Busca os novos gêneros no banco de dados
+                     var newGenres = await context.TblGenre
+                         .Where(g => req.GenreIDs.Contains(g.GenreID))
+                         .ToListAsync();
 
-                    // Atualiza as propriedades básicas do livro
-                    book.BookTitle = req.BookTitle;
-                    book.BookLanguage = req.BookLanguage;
-                    book.BookPublisher = req.BookPublisher;
-                    book.BookRating = req.BookRating;
-                    book.BookCoverPage = req.BookCoverPage;
+                     if (newGenres == null || newGenres.Count != req.GenreIDs.Count)
+                         return Results.BadRequest("Um ou mais gêneros não foram encontrados.");
 
-                    // Atualiza os autores associados ao livro
-                    book.Authors = newAuthors;
+                     // Atualiza as propriedades básicas do livro
+                     book.BookTitle = req.BookTitle;
+                     book.BookLanguage = req.BookLanguage;
+                     book.BookPublisher = req.BookPublisher;
+                     book.BookRating = req.BookRating;
+                     //book.BookCoverPage = req.BookCoverPage;
 
-                    // Atualiza os gêneros associados ao livro
-                    book.Genres = newGenres;
+                     // Atualiza os autores associados ao livro
+                     book.Authors = newAuthors;
 
-                    //  Atualiza as tags
-                    book.BookTags = string.Join(",", req.BookTags ?? new List<string>());
+                     // Atualiza os gêneros associados ao livro
+                     book.Genres = newGenres;
+
+                     //  Atualiza as tags
+                     book.BookTags = string.Join(",", req.BookTags ?? new List<string>());
 
 
-                    // Salva as alterações no banco de dados
-                    await context.SaveChangesAsync();
+                     // Salva as alterações no banco de dados
+                     await context.SaveChangesAsync();
 
-                    return Results.Ok(book);
-                })
-                .Produces<BookClass>(StatusCodes.Status200OK)
-                .Produces(StatusCodes.Status404NotFound)
-                .Produces(StatusCodes.Status400BadRequest);
+                     return Results.Ok(book);
+                 })
+                 .Produces<BookClass>(StatusCodes.Status200OK)
+                 .Produces(StatusCodes.Status404NotFound)
+                 .Produces(StatusCodes.Status400BadRequest);
 
 
             // DELETE
