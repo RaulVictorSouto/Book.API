@@ -220,7 +220,8 @@ namespace Book.API.Routes
 
                      // Busca o livro no banco de dados, incluindo os gêneros associados
                      var book = await context.TblBook
-                         .Include(b => b.Genres) // Carrega os gêneros associados ao livro
+                         .Include(b => b.Authors)
+                         .Include(b => b.Genres) 
                          .FirstOrDefaultAsync(x => x.BookID == BookID);
 
                      if (book == null)
@@ -247,7 +248,7 @@ namespace Book.API.Routes
                      book.BookLanguage = req.BookLanguage;
                      book.BookPublisher = req.BookPublisher;
                      book.BookRating = req.BookRating;
-                     //book.BookCoverPage = req.BookCoverPage;
+                     book.BookCoverPage = req.BookCoverPage;
 
                      // Atualiza os autores associados ao livro
                      book.Authors = newAuthors;
