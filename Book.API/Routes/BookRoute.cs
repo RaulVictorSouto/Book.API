@@ -285,6 +285,71 @@ namespace Book.API.Routes
                 })
                 .Produces(StatusCodes.Status204NoContent)
                 .Produces(StatusCodes.Status404NotFound);
+
+
+            //PESQUISAR COM BASE NO TITULO E TAGS
+            route.MapGet("search/",
+                async (IDbConnection dbConnection, string ? title, string ? tags) =>
+                {
+                    var query = @"
+                        SELECT 
+                            b.BookID, 
+                            b.BookTitle, 
+                            b.BookLanguage, 
+                            b.BookPublisher, 
+                            b.BookISBN, 
+                            b.BookRating, 
+                            b.BookCoverPage,
+                            b.BookTags,
+                            a.AuthorID, 
+                            a.AuthorName, 
+                            g.GenreID, 
+                            g.GenreName 
+                        FROM TblBook b
+                        LEFT JOIN TblBookAuthors ba ON b.BookID = ba.BooksBookID
+                        LEFT JOIN TblAuthor a ON ba.AuthorsAuthorID = a.AuthorID
+                        LEFT JOIN TblBookGenres bg ON b.BookID = bg.BooksBookID
+                        LEFT JOIN TblGenre g ON bg.GenresGenreID = g.GenreID
+                        WHERE (@Title IS NULL OR b.BookTitle LIKE CONCAT('%', @Title, '%'))
+                        AND (@Tags IS NULL OR b.BookTags LIKE CONCAT('%', @Tags, '%'))";
+
+                    var bookDictionary = new Dictionary<Guid, BookClass>();
+
+                    var result = await dbConnection.QueryAsync<BookClass, AuthorClass, GenreClass, BookClass>(
+                        query,
+                        (book, author, genre) =>
+                        {
+                            if (!bookDictionary.TryGetValue(book.BookID, out var bookEntry))
+                            {
+                                bookEntry = book;
+                                bookEntry.Authors = new List<AuthorClass>();
+                                bookEntry.Genres = new List<GenreClass>();
+                                bookDictionary.Add(book.BookID, bookEntry);
+                            }
+
+                            if (author != null && !bookEntry.Authors.Any(a => a.AuthorID == author.AuthorID))
+                            {
+                                bookEntry.Authors.Add(author);
+                            }
+
+                            if (genre != null && !bookEntry.Genres.Any(g => g.GenreID == genre.GenreID))
+                            {
+                                bookEntry.Genres.Add(genre);
+                            }
+
+                            return bookEntry;
+                        },
+                       new { Title = title, Tags = tags },
+                        splitOn: "AuthorID,GenreID"
+                    );
+
+                    return Results.Ok(bookDictionary.Values);
+                })
+            .Produces<BookClass>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
+
         }
+
+
     }
 }
