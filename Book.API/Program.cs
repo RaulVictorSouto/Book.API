@@ -68,6 +68,7 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 // Logging detalhado
 builder.Logging.ClearProviders();
 builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
 builder.Logging.AddDebug();
 
 var app = builder.Build();

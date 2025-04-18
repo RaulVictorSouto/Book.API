@@ -289,7 +289,7 @@ namespace Book.API.Routes
 
             //PESQUISAR COM BASE NO TITULO E TAGS
             route.MapGet("search/",
-                async (IDbConnection dbConnection, string ? title, string ? tags) =>
+                async (IDbConnection dbConnection, string ? title) =>
                 {
                     var query = @"
                         SELECT 
@@ -310,8 +310,7 @@ namespace Book.API.Routes
                         LEFT JOIN TblAuthor a ON ba.AuthorsAuthorID = a.AuthorID
                         LEFT JOIN TblBookGenres bg ON b.BookID = bg.BooksBookID
                         LEFT JOIN TblGenre g ON bg.GenresGenreID = g.GenreID
-                        WHERE (@Title IS NULL OR b.BookTitle LIKE CONCAT('%', @Title, '%'))
-                        AND (@Tags IS NULL OR b.BookTags LIKE CONCAT('%', @Tags, '%'))";
+                        WHERE (@Title IS NULL OR b.BookTitle LIKE CONCAT('%', @Title, '%'))";
 
                     var bookDictionary = new Dictionary<Guid, BookClass>();
 
@@ -339,7 +338,7 @@ namespace Book.API.Routes
 
                             return bookEntry;
                         },
-                       new { Title = title, Tags = tags },
+                       new { Title = title},
                         splitOn: "AuthorID,GenreID"
                     );
 
