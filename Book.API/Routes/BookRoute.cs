@@ -287,7 +287,7 @@ namespace Book.API.Routes
                 .Produces(StatusCodes.Status404NotFound);
 
 
-            //PESQUISAR COM BASE NO TITULO E TAGS
+            //PESQUISAR COM BASE NO TITULO
             route.MapGet("search/",
                 async (IDbConnection dbConnection, string ? title) =>
                 {

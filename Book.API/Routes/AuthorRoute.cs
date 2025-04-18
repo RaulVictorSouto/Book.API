@@ -102,6 +102,20 @@ namespace Book.API.Routes
                 })
                 .Produces(StatusCodes.Status204NoContent)
                 .Produces(StatusCodes.Status404NotFound);
+
+
+            //PESQUISAR POR NOME
+            route.MapGet("search/",
+                async (IDbConnection dbConnection, string? name) =>
+                {
+                    var query = @"Select * from TblAuthor WHERE (@Name IS NULL OR AuthorName LIKE CONCAT('%', @Name, '%'))";
+                    var authors = await dbConnection.QueryAsync<AuthorClass>(query, new { Name = name});
+                    if (authors == null || !authors.Any())
+                        return Results.NotFound("Nenhum autor encontrado.");
+                    return Results.Ok(authors);
+
+                })
+                .Produces<List<AuthorClass>>(StatusCodes.Status200OK);
         }
     }
 }

@@ -40,10 +40,10 @@ namespace Book.API.Routes
             async (IDbConnection dbConnection) =>
             {
                 var query = @"Select * from TblGenre";
-                var authors = await dbConnection.QueryAsync<GenreClass>(query);
-                if (authors == null || !authors.Any())
-                    return Results.NotFound("Nenhum autor encontrado.");
-                return Results.Ok(authors);
+                var genres = await dbConnection.QueryAsync<GenreClass>(query);
+                if (genres == null || !genres.Any())
+                    return Results.NotFound("Nenhum genero encontrado.");
+                return Results.Ok(genres);
 
             })
             .Produces<List<AuthorClass>>(StatusCodes.Status200OK);
@@ -101,6 +101,21 @@ namespace Book.API.Routes
                 })
                 .Produces(StatusCodes.Status204NoContent)
                 .Produces(StatusCodes.Status404NotFound);
+
+
+            //PESQUISA COM BASE EM NOME
+            route.MapGet("search/",
+            async (IDbConnection dbConnection, string? name) =>
+            {
+                var query = @"Select * from TblGenre WHERE (@Name IS NULL OR GenreName LIKE CONCAT('%', @Name, '%'))";
+                var genres = await dbConnection.QueryAsync<GenreClass>(query, new { Name = name});
+                if (genres == null || !genres.Any())
+                    return Results.NotFound("Nenhum genero encontrado.");
+                return Results.Ok(genres);
+
+            })
+            .Produces<List<AuthorClass>>(StatusCodes.Status200OK)
+            .Produces(StatusCodes.Status404NotFound);
         }
     }
 }
