@@ -287,11 +287,28 @@ namespace Book.API.Routes
                 .Produces(StatusCodes.Status404NotFound);
 
 
-            //PESQUISAR COM BASE NO TITULO
+            //PESQUISAR COM BASE EM PARAMETROS ESPECIFICOS
             route.MapGet("search/",
-                async (IDbConnection dbConnection, string ? title) =>
+                async (IDbConnection dbConnection, string? field, string? value) =>
                 {
-                    var query = @"
+                    // Mapear os campos permitidos para evitar SQL Injection
+                    var fieldMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                    {
+                        { "title", "b.BookTitle" },
+                        { "language", "b.BookLanguage" },
+                        { "isbn", "b.BookISBN" },
+                        { "publisher", "b.BookPublisher" },
+                        { "author", "a.AuthorName" },
+                        { "genre", "g.GenreName" }
+                    };
+
+                    // Verifica se o campo é válido
+                    if (field == null || !fieldMap.ContainsKey(field))
+                        return Results.BadRequest("Parâmetro 'field' inválido.");
+
+                    string dbField = fieldMap[field];
+
+                    string query = $@"
                         SELECT 
                             b.BookID, 
                             b.BookTitle, 
@@ -310,7 +327,7 @@ namespace Book.API.Routes
                         LEFT JOIN TblAuthor a ON ba.AuthorsAuthorID = a.AuthorID
                         LEFT JOIN TblBookGenres bg ON b.BookID = bg.BooksBookID
                         LEFT JOIN TblGenre g ON bg.GenresGenreID = g.GenreID
-                        WHERE (@Title IS NULL OR b.BookTitle LIKE CONCAT('%', @Title, '%'))";
+                        WHERE (@Value IS NULL OR {dbField} LIKE CONCAT('%', @Value, '%'))";
 
                     var bookDictionary = new Dictionary<Guid, BookClass>();
 
@@ -327,25 +344,21 @@ namespace Book.API.Routes
                             }
 
                             if (author != null && !bookEntry.Authors.Any(a => a.AuthorID == author.AuthorID))
-                            {
                                 bookEntry.Authors.Add(author);
-                            }
 
                             if (genre != null && !bookEntry.Genres.Any(g => g.GenreID == genre.GenreID))
-                            {
                                 bookEntry.Genres.Add(genre);
-                            }
 
                             return bookEntry;
                         },
-                       new { Title = title},
+                        new { Value = value },
                         splitOn: "AuthorID,GenreID"
                     );
 
                     return Results.Ok(bookDictionary.Values);
                 })
-            .Produces<BookClass>(StatusCodes.Status200OK)
-            .Produces(StatusCodes.Status404NotFound);
+                .Produces<BookClass>(StatusCodes.Status200OK)
+                .Produces(StatusCodes.Status404NotFound);
 
         }
 
