@@ -96,7 +96,8 @@ namespace Book.API.Routes
                                     LEFT JOIN TblBookAuthors ba ON b.BookID = ba.BooksBookID
                                     LEFT JOIN TblAuthor a ON ba.AuthorsAuthorID = a.AuthorID
                                     LEFT JOIN TblBookGenres bg ON b.BookID = bg.BooksBookID
-                                    LEFT JOIN TblGenre g ON bg.GenresGenreID = g.GenreID";
+                                    LEFT JOIN TblGenre g ON bg.GenresGenreID = g.GenreID
+                                    ORDER BY b.BookTitle";
 
                     var bookDictionary = new Dictionary<Guid, BookClass>();
 
@@ -247,6 +248,7 @@ namespace Book.API.Routes
                      book.BookTitle = req.BookTitle;
                      book.BookLanguage = req.BookLanguage;
                      book.BookPublisher = req.BookPublisher;
+                     book.BookISBN = req.BookISBN;
                      book.BookRating = req.BookRating;
                      book.BookCoverPage = req.BookCoverPage;
 
@@ -299,7 +301,8 @@ namespace Book.API.Routes
                         { "isbn", "b.BookISBN" },
                         { "publisher", "b.BookPublisher" },
                         { "author", "a.AuthorName" },
-                        { "genre", "g.GenreName" }
+                        { "genre", "g.GenreName" },
+                        { "tags", "b.BookTags"}
                     };
 
                     // Verifica se o campo é válido
@@ -327,7 +330,8 @@ namespace Book.API.Routes
                         LEFT JOIN TblAuthor a ON ba.AuthorsAuthorID = a.AuthorID
                         LEFT JOIN TblBookGenres bg ON b.BookID = bg.BooksBookID
                         LEFT JOIN TblGenre g ON bg.GenresGenreID = g.GenreID
-                        WHERE (@Value IS NULL OR {dbField} LIKE CONCAT('%', @Value, '%'))";
+                        WHERE (@Value IS NULL OR {dbField} LIKE CONCAT('%', @Value, '%'))
+                        ORDER BY b.BookTitle";
 
                     var bookDictionary = new Dictionary<Guid, BookClass>();
 

@@ -78,6 +78,9 @@ app.BookRoutes();
 app.AuthorRoutes();
 app.GenreRoutes();
 
+//força o uso de https
+app.UseHttpsRedirection();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -91,6 +94,25 @@ app.UseExceptionHandler("/error");
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
+
+//Headers Seguros
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Add("X-Frame-Options", "DENY");
+    context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+    await next();
+});
+//Arquivos Estáticos
+app.UseStaticFiles();
+//Remove o Cabeçalho "Server"
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Remove("Server");
+    await next();
+});
+
+
 
 
 app.Run();
