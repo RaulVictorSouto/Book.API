@@ -11,7 +11,9 @@ namespace Book.Shared.Models.Modelos
     public class AuthorClass
     {
         [Key]
-        public int AuthorID { get; set; } 
+        public int AuthorID { get; set; }
+        [Required(ErrorMessage = "O nome do autor é obrigatório")]
+        [StringLength(50, ErrorMessage = "O nome da autor não pode exceder 50 caracteres")]
         public string AuthorName { get; set; }
 
 

@@ -13,10 +13,28 @@ namespace Book.Shared.Models.Modelos
     {
         [Key]
         public Guid BookID { get; set; }
+        [Required(ErrorMessage = "O título do livro é obrigatório")]
+        [StringLength(150, ErrorMessage = "O título não pode exceder 100 caracteres")]
         public string BookTitle { get; set; }
+        [Required(ErrorMessage = "O idioma do livro é obrigatório")]
+        [StringLength(50, ErrorMessage = "O idioma não pode exceder 50 caracteres")]
         public string BookLanguage { get; set; }
+        [Required(ErrorMessage = "A editora do livro é obrigatória")]
+        [StringLength(50, ErrorMessage = "A editora não pode exceder 50 caracteres")]
         public string BookPublisher { get; set; }
-        public string BookISBN { get; set; }
+        [Required(ErrorMessage = "O ISBN do livro é obrigatório")]
+        [StringLength(13, MinimumLength = 10, ErrorMessage = "ISBN deve ter entre 10 e 13 caracteres")]
+        public string BookISBN
+        {
+            get => _bookISBN;
+            set => _bookISBN = LimparISBN(value);
+        }
+
+        // Campo privado para armazenar o ISBN limpo
+        private string _bookISBN;
+
+
+        [Required(ErrorMessage = "A classificação do livro é obrigatória")]
         public string BookRating { get; set; }
         public byte[]? BookCoverPage { get; set; }
 
@@ -68,6 +86,12 @@ namespace Book.Shared.Models.Modelos
             Authors = new List<AuthorClass>();
             Genres = new List<GenreClass>();
             BookTagsList = new List<string>();
+        }
+
+        // Método utilitário para limpar o ISBN (remover pontos, traços, espaços, etc.)
+        private string LimparISBN(string isbn)
+        {
+            return new string(isbn?.Where(char.IsDigit).ToArray() ?? Array.Empty<char>());
         }
 
     }

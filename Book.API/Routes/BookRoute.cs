@@ -37,14 +37,14 @@ namespace Book.API.Routes
                     .Where(a => req.AuthorIDs.Contains(a.AuthorID))
                     .ToListAsync();
 
-                if (authors.Count != req.AuthorIDs.Count)
+                if (authors.Count() != req.AuthorIDs.Count)
                     return Results.BadRequest("Um ou mais autores não foram encontrados.");
 
                 var genres = await context.TblGenre
                     .Where(g => req.GenreIDs.Contains(g.GenreID))
                     .ToListAsync();
 
-                if (genres.Count != req.GenreIDs.Count)
+                if (genres.Count() != req.GenreIDs.Count)
                     return Results.BadRequest("Um ou mais gêneros não foram encontrados.");
 
                 //var bookCoverBytes = string.IsNullOrEmpty(req.BookCoverPage)
@@ -233,7 +233,7 @@ namespace Book.API.Routes
                          .Where(a => req.AuthorIDs.Contains(a.AuthorID))
                          .ToListAsync();
 
-                     if (newAuthors == null || newAuthors.Count != req.AuthorIDs.Count)
+                     if (newAuthors == null || newAuthors.Count() != req.AuthorIDs.Count)
                          return Results.BadRequest("Um ou mais autores não foram encontrados.");
 
                      // Busca os novos gêneros no banco de dados
@@ -241,7 +241,7 @@ namespace Book.API.Routes
                          .Where(g => req.GenreIDs.Contains(g.GenreID))
                          .ToListAsync();
 
-                     if (newGenres == null || newGenres.Count != req.GenreIDs.Count)
+                     if (newGenres == null || newGenres.Count() != req.GenreIDs.Count)
                          return Results.BadRequest("Um ou mais gêneros não foram encontrados.");
 
                      // Atualiza as propriedades básicas do livro

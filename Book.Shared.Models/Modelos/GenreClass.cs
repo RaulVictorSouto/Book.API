@@ -12,6 +12,8 @@ namespace Book.Shared.Models.Modelos
     {
         [Key]
         public int GenreID { get; set; }
+        [Required(ErrorMessage = "O nome do gênero é obrigatório")]
+        [StringLength(50, ErrorMessage = "O nome do gênero não pode exceder 50 caracteres")]
         public string GenreName { get; set; }
 
 
