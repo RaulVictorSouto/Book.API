@@ -12,7 +12,8 @@ namespace Book.API.Routes
     {
         public static void GenreRoutes(this WebApplication app) 
         {
-            var route = app.MapGroup("genre");
+            var route = app.MapGroup("genre")
+                .RequireAuthorization();
 
             //POST
             route.MapPost("",

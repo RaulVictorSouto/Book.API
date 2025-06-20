@@ -20,7 +20,7 @@ namespace Book.API.Routes
     {
         public static void BookRoutes(this WebApplication app)
         {
-            var route = app.MapGroup("book");
+            var route = app.MapGroup("book").RequireAuthorization();
 
 
             //POST

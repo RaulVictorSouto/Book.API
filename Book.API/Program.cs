@@ -2,10 +2,12 @@ using System.Data;
 using System.Text.Json.Serialization;
 using Book.API.Routes;
 using Book.Shared.Data.Banco;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 
@@ -15,17 +17,17 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<BookApiContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Registrar DatabaseConnection como um serviço
+// Registrar DatabaseConnection como um serviï¿½o
 builder.Services.AddSingleton<DapperConnection>();
 
 // Registrar IDbConnection usando a classe DatabaseConnection
 builder.Services.AddScoped<IDbConnection>(sp =>
     sp.GetRequiredService<DapperConnection>().CreateConnection());
 
-// serviços de autorização
+// serviï¿½os de autorizaï¿½ï¿½o
 builder.Services.AddAuthorization();
 
-// Outras configurações de serviço
+// Outras configuraï¿½ï¿½es de serviï¿½o
 builder.Services.AddControllers();
 
 //adicionando o Swagger
@@ -33,9 +35,9 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSwaggerGen(doc =>
 {
-    doc.SwaggerDoc("v1", new OpenApiInfo() 
-    { 
-        Title = "Book API", 
+    doc.SwaggerDoc("v1", new OpenApiInfo()
+    {
+        Title = "Book API",
         Version = "v1",
         Description = "API mapeamento de livros cadastrados",
         Contact = new OpenApiContact()
@@ -43,23 +45,70 @@ builder.Services.AddSwaggerGen(doc =>
             Name = "Raul Souto"
         }
     });
+
+    doc.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    doc.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
+            },
+            new List<string>()
+        }
+    });
 });
 
-builder.Services.AddCors(options => {
-    options.AddPolicy("AllowAll", builder => {
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll", builder =>
+    {
         builder.AllowAnyOrigin()
                .AllowAnyMethod()
                .AllowAnyHeader();
     });
 });
 
-// Configuração para uploads grandes
+
+//autenticaÃ§Ã£o
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new Microsoft.IdentityModel.Tokens.SymmetricSecurityKey(
+                System.Text.Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+        };
+    });
+
+// Configuraï¿½ï¿½o para uploads grandes
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 52428800; // 50MB
 });
 
-// Configuração do Kestrel
+// Configuraï¿½ï¿½o do Kestrel
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.Limits.MaxRequestBodySize = 52428800; // 50MB
@@ -78,7 +127,7 @@ app.BookRoutes();
 app.AuthorRoutes();
 app.GenreRoutes();
 
-//força o uso de https
+//forï¿½a o uso de https
 app.UseHttpsRedirection();
 
 app.UseSwagger();
@@ -103,9 +152,9 @@ app.Use(async (context, next) =>
     context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
     await next();
 });
-//Arquivos Estáticos
+//Arquivos Estï¿½ticos
 app.UseStaticFiles();
-//Remove o Cabeçalho "Server"
+//Remove o Cabeï¿½alho "Server"
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Remove("Server");
